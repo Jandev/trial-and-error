@@ -13,4 +13,8 @@
     <ProjectReference Include="..\AspireTrial.Web\AspireTrial.Web.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.AppContainers" Version="13.1.0" />
+  </ItemGroup>
+
 </Project>
