@@ -9,6 +9,11 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddHttpClient<BackendServiceClient>(
+    static client => client.BaseAddress = new("https+http://backend"));
+
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -23,8 +28,9 @@ string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "
 
 app.MapGet("/", () => "API service is running. Navigate to /weatherforecast to see sample data.");
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/weatherforecast", async (BackendServiceClient backendServiceClient) =>
 {
+    var response = await backendServiceClient.GetRoot();
     var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (
@@ -32,7 +38,12 @@ app.MapGet("/weatherforecast", () =>
             Random.Shared.Next(-20, 55),
             summaries[Random.Shared.Next(summaries.Length)]
         ))
-        .ToArray();
+        .ToList();
+    forecast.Add(new WeatherForecast(
+        DateOnly.FromDateTime(DateTime.Now),
+        30,
+        response.Message
+    ));
     return forecast;
 })
 .WithName("GetWeatherForecast");
