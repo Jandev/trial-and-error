@@ -1,11 +1,33 @@
-# Project name
+# trial-and-error
 
-What is this about
+Aspire trial project with .NET API service and Python backend service.
 
-# Set up
+## Setup
 
-This is what you need to do to run it yourself
+**Install uv:**
 
-# Sample usage
+```bash
+brew install uv
+```
 
-See what it does
+**Create Python virtual environment:**
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -r src/AspireTrial/AspireBackendService/requirements.txt
+```
+
+**Run the application:**
+
+```bash
+aspire run
+```
+
+## Sample usage
+
+Access endpoints:
+
+- Web frontend: <http://localhost:5000>
+- API service: <http://localhost:5001/weatherforecast>
+- Python backend: <http://localhost:8000>
