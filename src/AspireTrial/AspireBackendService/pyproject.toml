@@ -13,5 +13,8 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.uv]
-dev-dependencies = []
+[tool.hatch.build.targets.wheel]
+packages = ["aspire_backend_service"]
+
+[dependency-groups]
+dev = []
