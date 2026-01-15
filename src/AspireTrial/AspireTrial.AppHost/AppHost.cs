@@ -3,7 +3,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 builder.AddAzureContainerAppEnvironment("env");
 
 var pythonBackend = builder.AddExecutable(
-    "backend", "../../../.venv/bin/python", "../AspireBackendService", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"
+    "backend", "../AspireBackendService/.venv/bin/python", "../AspireBackendService", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"
 )
 .WithHttpEndpoint(targetPort: 8000)
 .WithEnvironment("DEBUG", "true")

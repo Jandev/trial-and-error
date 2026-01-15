@@ -32,20 +32,11 @@
       "problemMatcher": []
     },
     {
-      "label": "Setup Python Environment - Backend (uv)",
-      "type": "shell",
-      "command": "uv venv && source .venv/bin/activate && uv pip install -r src/AspireTrial/AspireBackendService/requirements.txt",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": []
-    },
-    {
       "label": "Activate Python Environment - Backend",
       "type": "shell",
       "command": "source .venv/bin/activate && exec $SHELL",
       "options": {
-        "cwd": "${workspaceFolder}"
+        "cwd": "${workspaceFolder}/src/AspireTrial/AspireBackendService"
       },
       "problemMatcher": [],
       "presentation": {

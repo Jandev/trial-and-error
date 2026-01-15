@@ -13,9 +13,10 @@ brew install uv
 **Create Python virtual environment:**
 
 ```bash
+cd src/AspireTrial/AspireBackendService
 uv venv
 source .venv/bin/activate
-uv pip install -r src/AspireTrial/AspireBackendService/requirements.txt
+uv pip install -r requirements.txt
 ```
 
 **Run the application:**
