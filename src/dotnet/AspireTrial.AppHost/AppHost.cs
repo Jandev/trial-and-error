@@ -2,11 +2,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment("env");
 
-// Calculate absolute path to Python backend
-var appHostDir = Path.GetDirectoryName(typeof(Program).Assembly.Location)
-    ?? Directory.GetCurrentDirectory();
-var solutionRoot = Path.GetFullPath(Path.Combine(appHostDir, "..", "..", "..", "..", ".."));
-var pythonDir = Path.Combine(solutionRoot, "python");
+// Resolve Python backend paths (relative to AppHost project directory)
+var pythonDir = Path.GetFullPath("../../python");
 var pythonExe = Path.Combine(pythonDir, ".venv", "bin", "python");
 
 var pythonBackend = builder.AddExecutable(
