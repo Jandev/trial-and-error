@@ -16,7 +16,7 @@ brew install uv
 cd src/AspireTrial/AspireBackendService
 uv venv
 source .venv/bin/activate
-uv pip install -r requirements.txt
+uv sync
 ```
 
 **Run the application:**
