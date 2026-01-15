@@ -2,6 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Run Aspire",
+      "type": "shell",
+      "command": "aspire",
+      "args": [
+        "run"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Azure Login - Personal",
       "type": "shell",
       "command": "az",
@@ -16,6 +30,28 @@
         "focus": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Setup Python Environment - Backend",
+      "type": "shell",
+      "command": "cd src/AspireTrial/AspireBackendService && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "group": "none"
+    },
+    {
+      "label": "Activate Python Environment - Backend",
+      "type": "shell",
+      "command": "cd src/AspireTrial/AspireBackendService && source .venv/bin/activate && exec $SHELL",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "group": "none"
     }
   ]
 }
