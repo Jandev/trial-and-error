@@ -32,29 +32,15 @@
       "problemMatcher": []
     },
     {
-      "label": "Activate Python Environment - Backend",
-      "type": "shell",
-      "command": "source .venv/bin/activate && exec $SHELL",
-      "options": {
-        "cwd": "${workspaceFolder}/src/AspireTrial/AspireBackendService"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      },
-      "group": "none"
-    },
-    {
-      "label": "Install/Update Python Packages - Backend",
+      "label": "Python: Install/Update Packages",
       "type": "shell",
       "command": "uv",
       "args": [
         "sync",
-        "--upgrade"
+        "--all-groups"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/src/AspireTrial/AspireBackendService"
+        "cwd": "${workspaceFolder}/src/python"
       },
       "problemMatcher": [],
       "presentation": {
@@ -62,7 +48,98 @@
         "reveal": "always",
         "focus": true
       },
-      "group": "none"
+      "group": "build"
+    },
+    {
+      "label": "Python: Run Tests",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "pytest"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/python"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "group": "test"
+    },
+    {
+      "label": "Python: Lint (Ruff)",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "ruff",
+        "check",
+        "."
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/python"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "group": "build"
+    },
+    {
+      "label": "Python: Format (Ruff)",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "ruff",
+        "format",
+        "."
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/python"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "group": "build"
+    },
+    {
+      "label": ".NET: Build Solution",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/dotnet"
+      },
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
+      "label": ".NET: Run Tests",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "test"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/dotnet"
+      },
+      "problemMatcher": "$msCompile",
+      "group": "test"
     }
   ]
+}
+      "group": "none"
+}
+]
 }

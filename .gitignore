@@ -305,6 +305,35 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Python virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python build artifacts
+*.egg-info/
+*.egg
+dist/
+build/
+eggs/
+.eggs/
+
+# Python coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
 
 # Cake - Uncomment if you are using it
 # tools/**
