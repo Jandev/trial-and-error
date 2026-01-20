@@ -10,7 +10,6 @@ var pythonBackend = builder.AddUvicornApp("backend", pythonDir + "/src", "aspire
 .WithVirtualEnvironment(pythonDir + "/.venv")
 .WithEnvironment("DEBUG", "true")
 .WithEnvironment("LOG_LEVEL", "info")
-.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:19102")
 .WithEnvironment(context =>
 {
     // Dynamic environment variables
@@ -19,14 +18,12 @@ var pythonBackend = builder.AddUvicornApp("backend", pythonDir + "/src", "aspire
 
 var apiService = builder.AddProject<Projects.AspireTrial_ApiService>("apiservice")
     .WithReference(pythonBackend)
-    .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:19102")
     .WithHttpHealthCheck("/health");
 
 builder.AddProject<Projects.AspireTrial_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(apiService)
-    .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:19102")
     .WaitFor(apiService);
 
 builder.Build().Run();
