@@ -12,6 +12,7 @@ var pythonBackend = builder.AddExecutable(
 .WithHttpEndpoint(targetPort: 8000)
 .WithEnvironment("DEBUG", "true")
 .WithEnvironment("LOG_LEVEL", "info")
+.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:19102")
 .WithEnvironment(context =>
 {
     // Dynamic environment variables
@@ -20,12 +21,14 @@ var pythonBackend = builder.AddExecutable(
 
 var apiService = builder.AddProject<Projects.AspireTrial_ApiService>("apiservice")
     .WithReference(pythonBackend.GetEndpoint("http"))
+    .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:19102")
     .WithHttpHealthCheck("/health");
 
 builder.AddProject<Projects.AspireTrial_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(apiService)
+    .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:19102")
     .WaitFor(apiService);
 
 builder.Build().Run();
