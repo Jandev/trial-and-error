@@ -4,12 +4,10 @@ builder.AddAzureContainerAppEnvironment("env");
 
 // Resolve Python backend paths (relative to AppHost project directory)
 var pythonDir = Path.GetFullPath("../../python");
-var pythonExe = Path.Combine(pythonDir, ".venv", "bin", "python");
-
-var pythonBackend = builder.AddExecutable(
-    "backend", pythonExe, pythonDir, "-m", "uvicorn", "aspire_backend_service.main:app", "--host", "0.0.0.0", "--port", "8000"
-)
-.WithHttpEndpoint(targetPort: 8000)
+var pythonBackend = builder.AddUvicornApp("backend", pythonDir + "/src", "aspire_backend_service.main:app")
+.WithExternalHttpEndpoints()
+.WithUv()
+.WithVirtualEnvironment(pythonDir + "/.venv")
 .WithEnvironment("DEBUG", "true")
 .WithEnvironment("LOG_LEVEL", "info")
 .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:19102")
@@ -20,7 +18,7 @@ var pythonBackend = builder.AddExecutable(
 });
 
 var apiService = builder.AddProject<Projects.AspireTrial_ApiService>("apiservice")
-    .WithReference(pythonBackend.GetEndpoint("http"))
+    .WithReference(pythonBackend)
     .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:19102")
     .WithHttpHealthCheck("/health");
 
