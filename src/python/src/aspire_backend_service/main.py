@@ -10,6 +10,9 @@ app = FastAPI()
 tracer = configure_telemetry(app, service_name="weather-api")
 logger = logging.getLogger(__name__)
 
+from .routers.agents import router as agents_router
+
+app.include_router(agents_router)
 
 @app.get("/")
 async def root():
