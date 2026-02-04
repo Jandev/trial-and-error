@@ -1,0 +1,19 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/src/python/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.envFile": "${workspaceFolder}/src/python/.env",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/src/python/src"
+  ],
+  "python.venvPath": "${workspaceFolder}/src/python",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "ruff.configurationPreference": "filesystemFirst",
+  "flake8.enabled": false
+}

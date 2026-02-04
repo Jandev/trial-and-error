@@ -1,0 +1,141 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Aspire",
+      "type": "shell",
+      "command": "aspire",
+      "args": [
+        "run"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Azure Login - Personal",
+      "type": "shell",
+      "command": "az",
+      "args": [
+        "login",
+        "--tenant",
+        "${env:PERSONAL_AZURE_TENANT_ID}"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Python: Install/Update Packages",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "sync",
+        "--all-groups"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/python"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "group": "build"
+    },
+    {
+      "label": "Python: Run Tests",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "pytest"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/python"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "group": "test"
+    },
+    {
+      "label": "Python: Lint (Ruff)",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "ruff",
+        "check",
+        "."
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/python"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "group": "build"
+    },
+    {
+      "label": "Python: Format (Ruff)",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "ruff",
+        "format",
+        "."
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/python"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      },
+      "group": "build"
+    },
+    {
+      "label": ".NET: Build Solution",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/dotnet"
+      },
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
+      "label": ".NET: Run Tests",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "test"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/dotnet"
+      },
+      "problemMatcher": "$msCompile",
+      "group": "test"
+    }
+  ]
+}

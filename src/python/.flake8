@@ -1,0 +1,8 @@
+[flake8]  
+# Ignore specific rules  
+ignore = E501
+
+# Optional: Adjust line length instead of ignoring E501  
+# max-line-length = 120   
+# Optional: Exclude files/directories (e.g., virtual envs, tests)  
+exclude = .git, __pycache__, venv, .vscode  
