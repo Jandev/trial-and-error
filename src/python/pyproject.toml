@@ -9,6 +9,7 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-grpc",
     "opentelemetry-instrumentation-fastapi",
     "opentelemetry-instrumentation-httpx",
+    "agent-framework-azure-ai"
 ]
 
 [build-system]
@@ -41,3 +42,5 @@ warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 
+[tool.uv]
+prerelease = "allow"
