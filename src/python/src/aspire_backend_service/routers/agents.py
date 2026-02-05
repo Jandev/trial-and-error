@@ -1,6 +1,9 @@
 from fastapi import APIRouter
 
 from ..agents.hello import hello
+from ..agents.calculator import calculator
+
+from .request_models import CountLettersRequest
 
 router = APIRouter(
     prefix="/agents",
@@ -19,4 +22,12 @@ async def hello_world():
     response_message = await subject.run()
     return {
         "message": response_message
+    }
+
+@router.post("/count-letters")
+async def count_letters(request: CountLettersRequest):
+    subject = calculator()
+    answer = await subject.run(request.question)
+    return {
+        "count": answer
     }
