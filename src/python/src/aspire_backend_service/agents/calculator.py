@@ -6,6 +6,8 @@ from azure.ai.projects.aio import AIProjectClient
 from agent_framework import ChatAgent
 from azure.ai.agents.aio import AgentsClient
 from pydantic import BaseModel, ConfigDict
+from typing import AsyncGenerator
+
 
 class calculator_response(BaseModel):
     """Structured calculator response"""
@@ -38,8 +40,8 @@ class calculator:
             )
 
             try:
-                agent = provider.as_agent(
-                    calculator_agent,
+                agent = await provider.get_agent(
+                    calculator_agent.id,
                     tools= [
                         count_letters,
                         calculate_square_root
@@ -50,6 +52,7 @@ class calculator:
                     question,
                     options={"response_format": calculator_response})
                 return answer.value
+
             finally:
                 await agents_client.delete_agent(calculator_agent.id)
 
