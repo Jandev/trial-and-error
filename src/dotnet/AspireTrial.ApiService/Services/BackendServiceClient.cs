@@ -9,6 +9,23 @@ public class BackendServiceClient(HttpClient httpClient)
         }
         return result;
     }
+
+    public async Task<CountLettersResponse> GetCountLetters(string question)
+    {
+        var request = new CountLettersRequest(question);
+        var result = await httpClient.PostAsJsonAsync("/agents/count-letters", request);
+        if (result == null)
+        {
+            throw new InvalidOperationException("Failed to count letters: response was null.");
+        }
+
+        var response = await result.Content.ReadFromJsonAsync<CountLettersResponse>()
+                            ?? new CountLettersResponse(0, string.Empty, string.Empty, string.Empty);
+        return response;
+    }
 }
 
 public record BackendRootResponse(string Message);
+
+public record CountLettersRequest(string Question);
+public record CountLettersResponse(float FinalNumber, string Reasoning, string ChainOfThought, string Answer);

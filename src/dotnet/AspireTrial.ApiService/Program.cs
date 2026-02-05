@@ -48,6 +48,13 @@ app.MapGet("/weatherforecast", async (BackendServiceClient backendServiceClient)
 })
 .WithName("GetWeatherForecast");
 
+app.MapPost("/countLetters", async (AskRequest ask, BackendServiceClient backendServiceClient) =>
+{
+    var question = ask.Question;
+    var response = await backendServiceClient.GetCountLetters(question);
+    return response;
+});
+
 app.MapDefaultEndpoints();
 
 app.Run();
@@ -56,3 +63,5 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
+
+record AskRequest(string Question);

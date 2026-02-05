@@ -4,12 +4,20 @@ from ..agents.hello import hello
 from ..agents.calculator import calculator
 
 from .request_models import CountLettersRequest
+from pydantic import BaseModel, ConfigDict
 
 router = APIRouter(
     prefix="/agents",
     tags=["agents"],
     responses={ 404: { "description": "Not Found" }},
 )
+
+class count_letters_response(BaseModel):
+    finalNumber: float
+    reasoning: str
+    chainOfThought: str
+    answer: str
+
 
 @router.get("/hello-world")
 async def hello_world():
@@ -25,9 +33,25 @@ async def hello_world():
     }
 
 @router.post("/count-letters")
-async def count_letters(request: CountLettersRequest):
+async def count_letters(request: CountLettersRequest) -> count_letters_response:
     subject = calculator()
-    answer = await subject.run(request.question)
-    return {
-        "count": answer
-    }
+    results = await subject.run(request.question)
+
+    if results is None:
+        return count_letters_response(
+            answer="",
+            finalNumber=0,
+            reasoning="",
+            chainOfThought=""
+        )
+
+    responseValue = count_letters_response(
+        answer= results.answer,
+        chainOfThought= results.chain_of_thought,
+        reasoning = results.reasoning,
+        finalNumber = results.final_number
+    )
+
+    return responseValue
+
+
