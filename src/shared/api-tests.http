@@ -1,5 +1,5 @@
 @ApiService_HostAddress = http://localhost:5402
-@PythonService_HostAddress = https://localhost:58508
+@PythonService_HostAddress = https://localhost:57939
 
 GET {{ApiService_HostAddress}}/weatherforecast/
 Accept: application/json
@@ -16,4 +16,12 @@ Accept: application/json
 
 {
     "question": "How many `r` are there in the word strawberry?"
+}
+
+###
+POST {{PythonService_HostAddress}}/agents/count-letters
+Accept: application/json
+
+{
+    "question": "I want to know the square root of the number of times the letter `r` is found in `Strawberry`?"
 }
