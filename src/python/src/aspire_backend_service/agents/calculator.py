@@ -5,10 +5,18 @@ from agent_framework.azure import AzureAIAgentClient, AzureAIAgentsProvider
 from azure.ai.projects.aio import AIProjectClient
 from agent_framework import ChatAgent
 from azure.ai.agents.aio import AgentsClient
+from pydantic import BaseModel, ConfigDict
+
+class calculator_response(BaseModel):
+    """Structured calculator response"""
+    final_number: float
+    reasoning: str
+    chain_of_thought: str
+    answer: str
+    model_config = ConfigDict(extra="forbid")
 
 class calculator:
-    async def run(self, question: str):
-        answer = "I don't know"
+    async def run(self, question: str) -> calculator_response | None:
         async with(
             AzureCliCredential() as credential,
             AgentsClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as agents_client,
@@ -23,6 +31,8 @@ class calculator:
                 model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"],
                 name="CalculatorAgent",
                 instructions=agent_instructions,
+                # Adding this yields in an error `TypeError: ClientSession._request() got an unexpected keyword argument 'default_options'`.
+                # default_options={"response_format": calculator_response},
                 # Adding tools over here yields in a `Object of type FunctionTool is not JSON serializable`-error.
                 # tools= [count_letters]
             )
@@ -33,20 +43,24 @@ class calculator:
                     tools= [
                         count_letters,
                         calculate_square_root
-                    ])
+                    ]
+                )
 
-                answer = await agent.run(question)
+                answer = await agent.run(
+                    question,
+                    options={"response_format": calculator_response})
+                return answer.value
             finally:
                 await agents_client.delete_agent(calculator_agent.id)
 
-        return answer
+        return None
 
 from typing import Annotated
 from pydantic import Field
 from agent_framework import tool
 from math import sqrt
 
-# @tool(approval_mode="never_require")
+@tool(approval_mode="never_require")
 def count_letters(
         character: Annotated[str, Field(description="The character that needs to be counted in the string.")],
         phrase: Annotated[str, Field(description="The word or phrase that needs its characters counted.")],
@@ -55,10 +69,11 @@ def count_letters(
     counted_characters = phrase.count(character)
     return counted_characters
 
-# @tool(approval_mode="never_require")
+@tool(approval_mode="never_require")
 def calculate_square_root(
         number: Annotated[float, Field(description="The number you want the square root to be calculated for.")]
 ) -> float:
     """Calculate the square root of the provided number and return it."""
     square_root = sqrt(number)
     return square_root
+
