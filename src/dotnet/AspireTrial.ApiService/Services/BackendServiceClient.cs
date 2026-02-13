@@ -26,8 +26,8 @@ public class BackendServiceClient(HttpClient httpClient)
 
     public async Task<Tuple<string, HttpClient>> GetCountLettersAgentCardEndpoint()
     {
-        var endpoint = "/agents/count-letters/.well-known/agent-card.json";
-        return new Tuple<string, HttpClient>(endpoint, httpClient);
+        var endpoint = "agents/count-letters/";
+        return new Tuple<string, HttpClient>(httpClient.BaseAddress + endpoint, httpClient);
     }
 }
 

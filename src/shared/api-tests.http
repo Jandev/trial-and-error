@@ -15,6 +15,15 @@ Content-Type: application/json
 }
 
 ###
+POST {{ApiService_HostAddress}}/countLetters-a2a
+Accept: application/json
+Content-Type: application/json
+
+{
+    "question": "I want to know the square root of the number of times the letter `r` is found in `Strawberry`?"
+}
+
+###
 
 GET {{PythonService_HostAddress}}/agents/hello-world
 Accept: application/json
