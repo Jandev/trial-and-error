@@ -1,3 +1,5 @@
+using AspireTrial.ApiService.Options;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
@@ -5,6 +7,12 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
+
+// Configure Azure AI options using the Options pattern
+builder.Services.AddOptions<AzureAIOptions>()
+    .BindConfiguration(AzureAIOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

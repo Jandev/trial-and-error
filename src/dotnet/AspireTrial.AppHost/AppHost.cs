@@ -27,7 +27,9 @@ var pythonBackend = builder.AddUvicornApp("backend", pythonDir + "/src", "aspire
 
 var apiService = builder.AddProject<Projects.AspireTrial_ApiService>("apiservice")
     .WithReference(pythonBackend)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck("/health")
+    .WithEnvironment("AzureAI__ProjectEndpoint", aiFoundryProjectEndpoint)
+    .WithEnvironment("AzureAI__ModelDeploymentName", "gpt-4o-mini");
 
 builder.AddProject<Projects.AspireTrial_Web>("webfrontend")
     .WithExternalHttpEndpoints()
