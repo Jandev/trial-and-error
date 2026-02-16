@@ -176,18 +176,21 @@ async def count_letters_a2a(request_obj: Request) -> JSONResponse:
                 or jsonrpc_request.params.get("prompt")
             )
             if not question:
-                logger.error(f"No recognized question field in params: {jsonrpc_request.params}")
+                    logger.error(f"No recognized field in params: {jsonrpc_request.params}")
                 error_response = JsonRpcErrorResponse(
                     error=JsonRpcError(
                         code=-32602,
-                        message="Invalid params - no recognized question field found. Expected 'question', 'input', 'text', or 'prompt'",
+                            message="Invalid params - expected A2A message structure with message.parts[].text",
                         data={"received": jsonrpc_request.params},
                     ),
                     id=jsonrpc_request.id,
                 )
                 return JSONResponse(content=error_response.model_dump(), status_code=400)
+        elif isinstance(jsonrpc_request.params, str):
+            # Legacy support: direct string params
+            question = jsonrpc_request.params
         elif isinstance(jsonrpc_request.params, list) and len(jsonrpc_request.params) > 0:
-            # Take the first element if it's an array
+            # Legacy support: array params
             question = (
                 jsonrpc_request.params[0]
                 if isinstance(jsonrpc_request.params[0], str)
@@ -200,7 +203,7 @@ async def count_letters_a2a(request_obj: Request) -> JSONResponse:
             error_response = JsonRpcErrorResponse(
                 error=JsonRpcError(
                     code=-32602,
-                    message="Invalid params - expected string, dict with question field, or array",
+                    message="Invalid params - expected A2A message structure",
                     data={
                         "received": jsonrpc_request.params,
                         "type": str(type(jsonrpc_request.params)),
@@ -218,19 +221,43 @@ async def count_letters_a2a(request_obj: Request) -> JSONResponse:
 
         if results is None:
             logger.warning("Calculator returned None results")
-            response_data = {"answer": "", "finalNumber": 0, "reasoning": "", "chainOfThought": ""}
+            answer_text = "I couldn't process the question."
         else:
-            response_data = {
-                "answer": results.answer,
-                "finalNumber": results.final_number,
-                "reasoning": results.reasoning,
-                "chainOfThought": results.chain_of_thought,
+            # Format the answer as a text response combining all information
+            answer_text = (
+                f"Answer: {results.answer}\n"
+                f"Final Number: {results.final_number}\n"
+                f"Reasoning: {results.reasoning}\n"
+                f"Chain of Thought: {results.chain_of_thought}"
+            )
+
+        # Generate UUIDs for A2A protocol
+        import uuid
+
+        task_id = str(uuid.uuid4())
+        context_id = str(uuid.uuid4())
+        message_id = str(uuid.uuid4())
+
+        # According to A2A spec section 3.1.1, SendMessage can return either:
+        # - A Task object (for async processing)
+        # - A Message object (for simple synchronous interactions)
+        #
+        # Since we're doing synchronous processing, return a Message directly
+        # instead of a Task with Completed status
+        a2a_message = {
+            "kind": "message",
+            "messageId": message_id,
+            "role": "Agent",  # .NET expects PascalCase role
+            "parts": [{"kind": "text", "text": answer_text}],
             }
 
-        # Return JSON-RPC response
-        jsonrpc_response = JsonRpcResponse(result=response_data, id=jsonrpc_request.id)
-        logger.info(f"Returning JSON-RPC response: {jsonrpc_response.model_dump()}")
-        return JSONResponse(content=jsonrpc_response.model_dump())
+        # Return JSON-RPC response with A2A Message object
+        jsonrpc_response = JsonRpcResponse(result=a2a_message, id=jsonrpc_request.id)
+        response_data = jsonrpc_response.model_dump()
+        logger.info(
+            f"Returning A2A-compliant JSON-RPC response with Message object: {json.dumps(response_data)}"
+        )
+        return JSONResponse(content=response_data)
 
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON: {e}")
