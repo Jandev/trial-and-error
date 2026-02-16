@@ -159,33 +159,64 @@ async def count_letters_a2a(request_obj: Request) -> JSONResponse:
         jsonrpc_request = JsonRpcRequest(**body_json)
         logger.info(f"JSON-RPC method: {jsonrpc_request.method}, params: {jsonrpc_request.params}")
 
-        # Extract the question from params
-        # The A2A protocol can send params in various formats:
-        # 1. As a string: "params": "question text"
-        # 2. As a dict with question: "params": {"question": "..."}
-        # 3. As an array: "params": ["question text"]
-        # 4. As a dict with input: "params": {"input": "..."}
-        if isinstance(jsonrpc_request.params, str):
-            question = jsonrpc_request.params
-        elif isinstance(jsonrpc_request.params, dict):
-            # Try multiple keys that might contain the question
-            question = (
-                jsonrpc_request.params.get("question")
-                or jsonrpc_request.params.get("input")
-                or jsonrpc_request.params.get("text")
-                or jsonrpc_request.params.get("prompt")
-            )
-            if not question:
-                    logger.error(f"No recognized field in params: {jsonrpc_request.params}")
-                error_response = JsonRpcErrorResponse(
-                    error=JsonRpcError(
-                        code=-32602,
-                            message="Invalid params - expected A2A message structure with message.parts[].text",
-                        data={"received": jsonrpc_request.params},
-                    ),
-                    id=jsonrpc_request.id,
+        # Extract the question from params according to A2A protocol
+        # The A2A protocol sends params as:
+        # "params": {"message": {"role": "user", "parts": [{"kind": "text", "text": "..."}], ...}}
+        question = None
+
+        if isinstance(jsonrpc_request.params, dict):
+            # Check for A2A message structure: params.message.parts[].text
+            message = jsonrpc_request.params.get("message")
+            if message and isinstance(message, dict):
+                parts = message.get("parts")
+                if parts and isinstance(parts, list) and len(parts) > 0:
+                    # Extract text from the first text part
+                    for part in parts:
+                        if isinstance(part, dict) and part.get("kind") == "text":
+                            question = part.get("text")
+                            break
+
+                    if not question:
+                        logger.error(f"No text part found in A2A message parts: {parts}")
+                        error_response = JsonRpcErrorResponse(
+                            error=JsonRpcError(
+                                code=-32602,
+                                message="Invalid A2A message - no text part found in message.parts",
+                                data={"received": jsonrpc_request.params},
+                            ),
+                            id=jsonrpc_request.id,
+                        )
+                        return JSONResponse(content=error_response.model_dump(), status_code=400)
+                else:
+                    logger.error(f"No parts array in A2A message: {message}")
+                    error_response = JsonRpcErrorResponse(
+                        error=JsonRpcError(
+                            code=-32602,
+                            message="Invalid A2A message - message.parts must be a non-empty array",
+                            data={"received": jsonrpc_request.params},
+                        ),
+                        id=jsonrpc_request.id,
+                    )
+                    return JSONResponse(content=error_response.model_dump(), status_code=400)
+            else:
+                # Fallback: Try legacy simple formats for backward compatibility
+                question = (
+                    jsonrpc_request.params.get("question")
+                    or jsonrpc_request.params.get("input")
+                    or jsonrpc_request.params.get("text")
+                    or jsonrpc_request.params.get("prompt")
                 )
-                return JSONResponse(content=error_response.model_dump(), status_code=400)
+                if not question:
+                    logger.error(f"No recognized field in params: {jsonrpc_request.params}")
+                    error_response = JsonRpcErrorResponse(
+                        error=JsonRpcError(
+                            code=-32602,
+                            message="Invalid params - expected A2A message structure with message.parts[].text",
+                            data={"received": jsonrpc_request.params},
+                        ),
+                        id=jsonrpc_request.id,
+                    )
+                    return JSONResponse(content=error_response.model_dump(), status_code=400)
         elif isinstance(jsonrpc_request.params, str):
             # Legacy support: direct string params
             question = jsonrpc_request.params
@@ -249,7 +280,7 @@ async def count_letters_a2a(request_obj: Request) -> JSONResponse:
             "messageId": message_id,
             "role": "Agent",  # .NET expects PascalCase role
             "parts": [{"kind": "text", "text": answer_text}],
-            }
+        }
 
         # Return JSON-RPC response with A2A Message object
         jsonrpc_response = JsonRpcResponse(result=a2a_message, id=jsonrpc_request.id)
