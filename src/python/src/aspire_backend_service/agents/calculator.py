@@ -28,9 +28,18 @@ class calculator:
             ) as agents_client,
             AzureAIAgentsProvider(credential=credential) as provider,
         ):
-            agent_instructions = """You are able to do calculations on questions asked.
-            Tools have been provided to do those calculations. Always use the tools to create
-            answers and specify which tools have been used to the user.
+            agent_instructions = """You are a calculator agent with access to the following tools:
+            1. count_letters(character, phrase) - Counts how many times a specific character appears in a word or phrase
+            2. calculate_square_root(number) - Calculates the square root of a number
+            
+            IMPORTANT: You MUST use these tools to solve problems. Follow these rules:
+            - When asked to count characters/letters in a word or phrase, ALWAYS call the count_letters tool
+            - When asked to calculate square roots, ALWAYS call the calculate_square_root tool
+            - If a question requires multiple steps (e.g., "find the square root of the count"), call the tools in sequence:
+              * First, call count_letters to get the count
+              * Then, call calculate_square_root with the result from count_letters
+            - NEVER guess or manually calculate - always use the provided tools
+            - In your final response, explain which tools you used and show the chain of calculations
             """
 
             calculator_agent = await agents_client.create_agent(
