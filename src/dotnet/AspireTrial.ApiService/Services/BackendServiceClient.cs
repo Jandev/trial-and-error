@@ -23,6 +23,12 @@ public class BackendServiceClient(HttpClient httpClient)
                             ?? new CountLettersResponse(0, string.Empty, string.Empty, string.Empty);
         return response;
     }
+
+    public async Task<Tuple<string, HttpClient>> GetCountLettersAgentCardEndpoint()
+    {
+        var endpoint = "agents/count-letters/";
+        return new Tuple<string, HttpClient>(httpClient.BaseAddress + endpoint, httpClient);
+    }
 }
 
 public record BackendRootResponse(string Message);

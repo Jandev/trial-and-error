@@ -1,5 +1,5 @@
 @ApiService_HostAddress = http://localhost:5402
-@PythonService_HostAddress = https://localhost:53470
+@PythonService_HostAddress = https://localhost:9443
 
 ###
 GET {{ApiService_HostAddress}}/weatherforecast/
@@ -15,23 +15,49 @@ Content-Type: application/json
 }
 
 ###
+POST {{ApiService_HostAddress}}/countLetters-a2a
+Accept: application/json
+Content-Type: application/json
+
+{
+    "question": "I want to know the square root of the number of times the letter `r` is found in `Strawberry`?"
+}
+
+###
 
 GET {{PythonService_HostAddress}}/agents/hello-world
 Accept: application/json
 
-###
-
+### Count Letters - REST API endpoint
 POST {{PythonService_HostAddress}}/agents/count-letters
 Accept: application/json
+Content-Type: application/json
 
 {
     "question": "How many `r` are there in the word strawberry?"
 }
 
-###
+### Count Letters - REST API endpoint (another test)
 POST {{PythonService_HostAddress}}/agents/count-letters
 Accept: application/json
+Content-Type: application/json
 
 {
     "question": "I want to know the square root of the number of times the letter `r` is found in `Strawberry`?"
 }
+
+### Count Letters - A2A JSON-RPC endpoint
+POST {{PythonService_HostAddress}}/agents/count-letters-a2a
+Accept: application/json
+Content-Type: application/json
+
+{
+    "jsonrpc": "2.0",
+    "method": "run",
+    "params": "How many r are there in the word strawberry?",
+    "id": 1
+}
+
+### Count Letters - Agent Card
+GET {{PythonService_HostAddress}}/agents/count-letters/.well-known/agent-card.json
+Accept: application/json

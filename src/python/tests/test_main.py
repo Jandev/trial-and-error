@@ -1,8 +1,9 @@
 """Tests for the main FastAPI application."""
 
 import pytest
-from aspire_backend_service.main import app
 from fastapi.testclient import TestClient
+
+from aspire_backend_service.main import app
 
 
 @pytest.fixture

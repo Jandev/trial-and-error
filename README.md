@@ -12,11 +12,17 @@ Aspire trial project with .NET API service and Python backend service.
 
 ### Configure Secrets
 
-Add the AI Foundry endpoint to the AppHost project's secrets:
+Configure Azure AI Foundry settings in the AppHost project's secrets:
 
 ```bash
+# AI Foundry Project Endpoint
 dotnet user-secrets set "Parameters:AiFoundryProjectEndpoint" "https://<your-project>.services.ai.azure.com/api/projects/<project-id>" --project src/dotnet/AspireTrial.AppHost
+
+# Model Deployment Name (e.g., gpt-4o, gpt-35-turbo)
+dotnet user-secrets set "Parameters:ModelDeploymentName" "gpt-4o" --project src/dotnet/AspireTrial.AppHost
 ```
+
+> See [AzureAIOptions.cs](src/dotnet/AspireTrial.ApiService/Options/AzureAIOptions.cs) for configuration details.
 
 ### Install uv
 
@@ -53,3 +59,21 @@ Or use the VS Code task: **Run Aspire**
 | Python: Format (Ruff)           | Format code                        |
 | .NET: Build Solution            | Build all .NET projects            |
 | .NET: Run Tests                 | Run .NET tests                     |
+
+## Features
+
+### A2A Protocol Implementation
+
+The project implements the [Agent-to-Agent (A2A) protocol](https://github.com/microsoft/agents) for agent collaboration:
+
+- **Python Agent**: `CountLettersAgent` provides letter counting functionality via A2A
+  - Endpoint: `/agents/count-letters-a2a` (JSON-RPC 2.0)
+  - Agent card: `/agents/count-letters/.well-known/agent-card.json`
+  - Implementation: [agents.py](src/python/src/aspire_backend_service/routers/agents.py)
+
+- **.NET Orchestrator**: Discovers and uses the Python agent via A2A
+  - Implementation: [AgentCollaboration.cs](src/dotnet/AspireTrial.ApiService/Services/AgentCollaboration.cs)
+  - Uses Azure AI Foundry for orchestration
+  - Endpoint: `/countLetters-a2a`
+
+See [api-tests.http](src/shared/api-tests.http) for usage examples.

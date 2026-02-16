@@ -7,7 +7,10 @@ var aiFoundryProjectEndpoint = builder.AddParameter("AiFoundryProjectEndpoint", 
 // Resolve Python backend paths (relative to AppHost project directory)
 var pythonDir = Path.GetFullPath("../../python");
 var pythonBackend = builder.AddUvicornApp("backend", pythonDir + "/src", "aspire_backend_service.main:app")
-.WithExternalHttpEndpoints()
+.WithEndpoint("http", e =>
+{
+    e.Port = 9443;
+})
 .WithUv()
 .WithVirtualEnvironment(pythonDir + "/.venv")
 .WithEnvironment("DEBUG", "true")
@@ -24,7 +27,9 @@ var pythonBackend = builder.AddUvicornApp("backend", pythonDir + "/src", "aspire
 
 var apiService = builder.AddProject<Projects.AspireTrial_ApiService>("apiservice")
     .WithReference(pythonBackend)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck("/health")
+    .WithEnvironment("AzureAI__ProjectEndpoint", aiFoundryProjectEndpoint)
+    .WithEnvironment("AzureAI__ModelDeploymentName", "gpt-4o-mini");
 
 builder.AddProject<Projects.AspireTrial_Web>("webfrontend")
     .WithExternalHttpEndpoints()

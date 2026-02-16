@@ -1,3 +1,5 @@
+using AspireTrial.ApiService.Options;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
@@ -6,12 +8,19 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
+// Configure Azure AI options using the Options pattern
+builder.Services.AddOptions<AzureAIOptions>()
+    .BindConfiguration(AzureAIOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 builder.Services.AddHttpClient<BackendServiceClient>(
     static client => client.BaseAddress = new("https+http://backend"));
 
+builder.Services.AddScoped<AgentCollaboration>();
 
 
 var app = builder.Build();
@@ -52,6 +61,13 @@ app.MapPost("/countLetters", async (AskRequest ask, BackendServiceClient backend
 {
     var question = ask.Question;
     var response = await backendServiceClient.GetCountLetters(question);
+    return response;
+});
+
+app.MapPost("/countLetters-a2a", async (AskRequest ask, AgentCollaboration agentCollaboration) =>
+{
+    var question = ask.Question;
+    var response = await agentCollaboration.Ask(question);
     return response;
 });
 

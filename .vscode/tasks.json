@@ -8,6 +8,9 @@
       "args": [
         "run"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}/src/dotnet/AspireTrial.AppHost"
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
