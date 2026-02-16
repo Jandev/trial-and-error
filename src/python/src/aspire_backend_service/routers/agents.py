@@ -1,10 +1,43 @@
+import json
+import logging
+from typing import Any, Optional
+
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from ..agents.calculator import calculator
 from ..agents.hello import hello
 from .request_models import CountLettersRequest
+
+logger = logging.getLogger(__name__)
+
+
+# JSON-RPC 2.0 models
+class JsonRpcRequest(BaseModel):
+    jsonrpc: str = Field(default="2.0")
+    method: Optional[str] = None
+    params: Optional[Any] = None
+    id: Optional[int | str] = None
+
+
+class JsonRpcResponse(BaseModel):
+    jsonrpc: str = Field(default="2.0")
+    result: Any
+    id: int | str | None = None
+
+
+class JsonRpcError(BaseModel):
+    code: int
+    message: str
+    data: Any | None = None
+
+
+class JsonRpcErrorResponse(BaseModel):
+    jsonrpc: str = Field(default="2.0")
+    error: JsonRpcError
+    id: int | str | None = None
+
 
 router = APIRouter(
     prefix="/agents",
@@ -82,10 +115,19 @@ async def hello_world():
 
 @router.post("/count-letters")
 async def count_letters(request: CountLettersRequest) -> count_letters_response:
+    """
+    Regular REST API endpoint for counting letters.
+    Accepts: {"question": "..."}
+    Returns: count_letters_response
+    """
+    logger.info(f"Received count-letters request: {request.model_dump()}")
+    logger.debug(f"Request question field: '{request.question}' (type: {type(request.question)})")
+
     subject = calculator()
     results = await subject.run(request.question)
 
     if results is None:
+        logger.warning("Calculator returned None results")
         return count_letters_response(answer="", finalNumber=0, reasoning="", chainOfThought="")
 
     responseValue = count_letters_response(
@@ -95,7 +137,119 @@ async def count_letters(request: CountLettersRequest) -> count_letters_response:
         finalNumber=results.final_number,
     )
 
+    logger.info(f"Returning response: finalNumber={responseValue.finalNumber}")
     return responseValue
+
+
+@router.post("/count-letters-a2a")
+async def count_letters_a2a(request_obj: Request) -> JSONResponse:
+    """
+    A2A JSON-RPC 2.0 endpoint for counting letters.
+    Accepts: {"jsonrpc": "2.0", "method": "run", "params": "...", "id": 1}
+    Returns: JSON-RPC 2.0 response
+    """
+    try:
+        body = await request_obj.body()
+        body_str = body.decode("utf-8")
+        logger.info(f"A2A endpoint - Raw request body: {body_str}")
+
+        body_json = json.loads(body_str)
+
+        # Parse as JSON-RPC request
+        jsonrpc_request = JsonRpcRequest(**body_json)
+        logger.info(f"JSON-RPC method: {jsonrpc_request.method}, params: {jsonrpc_request.params}")
+
+        # Extract the question from params
+        # The A2A protocol can send params in various formats:
+        # 1. As a string: "params": "question text"
+        # 2. As a dict with question: "params": {"question": "..."}
+        # 3. As an array: "params": ["question text"]
+        # 4. As a dict with input: "params": {"input": "..."}
+        if isinstance(jsonrpc_request.params, str):
+            question = jsonrpc_request.params
+        elif isinstance(jsonrpc_request.params, dict):
+            # Try multiple keys that might contain the question
+            question = (
+                jsonrpc_request.params.get("question")
+                or jsonrpc_request.params.get("input")
+                or jsonrpc_request.params.get("text")
+                or jsonrpc_request.params.get("prompt")
+            )
+            if not question:
+                logger.error(f"No recognized question field in params: {jsonrpc_request.params}")
+                error_response = JsonRpcErrorResponse(
+                    error=JsonRpcError(
+                        code=-32602,
+                        message="Invalid params - no recognized question field found. Expected 'question', 'input', 'text', or 'prompt'",
+                        data={"received": jsonrpc_request.params},
+                    ),
+                    id=jsonrpc_request.id,
+                )
+                return JSONResponse(content=error_response.model_dump(), status_code=400)
+        elif isinstance(jsonrpc_request.params, list) and len(jsonrpc_request.params) > 0:
+            # Take the first element if it's an array
+            question = (
+                jsonrpc_request.params[0]
+                if isinstance(jsonrpc_request.params[0], str)
+                else str(jsonrpc_request.params[0])
+            )
+        else:
+            logger.error(
+                f"Unexpected params format: {jsonrpc_request.params} (type: {type(jsonrpc_request.params)})"
+            )
+            error_response = JsonRpcErrorResponse(
+                error=JsonRpcError(
+                    code=-32602,
+                    message="Invalid params - expected string, dict with question field, or array",
+                    data={
+                        "received": jsonrpc_request.params,
+                        "type": str(type(jsonrpc_request.params)),
+                    },
+                ),
+                id=jsonrpc_request.id,
+            )
+            return JSONResponse(content=error_response.model_dump(), status_code=400)
+
+        logger.info(f"Extracted question: {question}")
+
+        # Run the calculator
+        subject = calculator()
+        results = await subject.run(question)
+
+        if results is None:
+            logger.warning("Calculator returned None results")
+            response_data = {"answer": "", "finalNumber": 0, "reasoning": "", "chainOfThought": ""}
+        else:
+            response_data = {
+                "answer": results.answer,
+                "finalNumber": results.final_number,
+                "reasoning": results.reasoning,
+                "chainOfThought": results.chain_of_thought,
+            }
+
+        # Return JSON-RPC response
+        jsonrpc_response = JsonRpcResponse(result=response_data, id=jsonrpc_request.id)
+        logger.info(f"Returning JSON-RPC response: {jsonrpc_response.model_dump()}")
+        return JSONResponse(content=jsonrpc_response.model_dump())
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON: {e}")
+        error_response = JsonRpcErrorResponse(
+            error=JsonRpcError(code=-32700, message="Parse error", data=str(e)), id=None
+        )
+        return JSONResponse(content=error_response.model_dump(), status_code=400)
+    except ValidationError as e:
+        logger.error(f"Validation error: {e}")
+        error_response = JsonRpcErrorResponse(
+            error=JsonRpcError(code=-32600, message="Invalid Request", data=e.errors()), id=None
+        )
+        return JSONResponse(content=error_response.model_dump(), status_code=400)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}", exc_info=True)
+        error_response = JsonRpcErrorResponse(
+            error=JsonRpcError(code=-32603, message="Internal error", data=str(e)), id=None
+        )
+        return JSONResponse(content=error_response.model_dump(), status_code=500)
 
 
 @router.get("/count-letters/.well-known/agent-card.json")
@@ -126,7 +280,8 @@ async def get_count_letters_agent_card(request: Request):
     scheme = request.headers.get("X-Forwarded-Proto", request.url.scheme)
     host = request.headers.get("X-Forwarded-Host", request.url.netloc)
     base_url = f"{scheme}://{host}"
-    agent_url = f"{base_url}/agents/count-letters"
+    # Point to the A2A-specific endpoint that handles JSON-RPC
+    agent_url = f"{base_url}/agents/count-letters-a2a"
 
     # Define supported interfaces according to A2A protocol
     supported_interfaces = [
