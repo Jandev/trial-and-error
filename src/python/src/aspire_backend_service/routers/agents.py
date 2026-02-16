@@ -46,7 +46,39 @@ router = APIRouter(
 )
 
 
-# A2A Protocol Models
+# A2A Protocol Models - Request/Response structures
+class A2AMessagePart(BaseModel):
+    """A2A Message Part - represents content within a message"""
+
+    kind: str
+    text: str
+
+
+class A2AMessage(BaseModel):
+    """A2A Message - the core message structure"""
+
+    kind: str = "message"
+    role: str
+    parts: list[A2AMessagePart]
+    messageId: str
+
+
+class A2ASendMessageParams(BaseModel):
+    """A2A SendMessage parameters"""
+
+    message: A2AMessage
+
+
+class A2AJsonRpcRequest(BaseModel):
+    """A2A JSON-RPC request with typed params"""
+
+    jsonrpc: str = "2.0"
+    method: str
+    params: A2ASendMessageParams
+    id: str | int
+
+
+# A2A Protocol Models - Agent Card structures
 class AgentCapabilities(BaseModel):
     streaming: bool = Field(default=False)
     pushNotifications: bool = Field(default=False, alias="push_notifications")
@@ -142,105 +174,31 @@ async def count_letters(request: CountLettersRequest) -> count_letters_response:
 
 
 @router.post("/count-letters-a2a")
-async def count_letters_a2a(request_obj: Request) -> JSONResponse:
+async def count_letters_a2a(request: A2AJsonRpcRequest) -> JSONResponse:
     """
     A2A JSON-RPC 2.0 endpoint for counting letters.
-    Accepts: {"jsonrpc": "2.0", "method": "run", "params": "...", "id": 1}
-    Returns: JSON-RPC 2.0 response
+    Accepts A2A-compliant JSON-RPC request with typed message structure.
+    Returns: JSON-RPC 2.0 response with A2A Message object
     """
     try:
-        body = await request_obj.body()
-        body_str = body.decode("utf-8")
-        logger.info(f"A2A endpoint - Raw request body: {body_str}")
+        logger.info(
+            f"A2A endpoint - Method: {request.method}, Message ID: {request.params.message.messageId}"
+        )
 
-        body_json = json.loads(body_str)
-
-        # Parse as JSON-RPC request
-        jsonrpc_request = JsonRpcRequest(**body_json)
-        logger.info(f"JSON-RPC method: {jsonrpc_request.method}, params: {jsonrpc_request.params}")
-
-        # Extract the question from params according to A2A protocol
-        # The A2A protocol sends params as:
-        # "params": {"message": {"role": "user", "parts": [{"kind": "text", "text": "..."}], ...}}
+        # Extract question from the first text part
         question = None
+        for part in request.params.message.parts:
+            if part.kind == "text":
+                question = part.text
+                break
 
-        if isinstance(jsonrpc_request.params, dict):
-            # Check for A2A message structure: params.message.parts[].text
-            message = jsonrpc_request.params.get("message")
-            if message and isinstance(message, dict):
-                parts = message.get("parts")
-                if parts and isinstance(parts, list) and len(parts) > 0:
-                    # Extract text from the first text part
-                    for part in parts:
-                        if isinstance(part, dict) and part.get("kind") == "text":
-                            question = part.get("text")
-                            break
-
-                    if not question:
-                        logger.error(f"No text part found in A2A message parts: {parts}")
-                        error_response = JsonRpcErrorResponse(
-                            error=JsonRpcError(
-                                code=-32602,
-                                message="Invalid A2A message - no text part found in message.parts",
-                                data={"received": jsonrpc_request.params},
-                            ),
-                            id=jsonrpc_request.id,
-                        )
-                        return JSONResponse(content=error_response.model_dump(), status_code=400)
-                else:
-                    logger.error(f"No parts array in A2A message: {message}")
-                    error_response = JsonRpcErrorResponse(
-                        error=JsonRpcError(
-                            code=-32602,
-                            message="Invalid A2A message - message.parts must be a non-empty array",
-                            data={"received": jsonrpc_request.params},
-                        ),
-                        id=jsonrpc_request.id,
-                    )
-                    return JSONResponse(content=error_response.model_dump(), status_code=400)
-            else:
-                # Fallback: Try legacy simple formats for backward compatibility
-                question = (
-                    jsonrpc_request.params.get("question")
-                    or jsonrpc_request.params.get("input")
-                    or jsonrpc_request.params.get("text")
-                    or jsonrpc_request.params.get("prompt")
-                )
-                if not question:
-                    logger.error(f"No recognized field in params: {jsonrpc_request.params}")
-                    error_response = JsonRpcErrorResponse(
-                        error=JsonRpcError(
-                            code=-32602,
-                            message="Invalid params - expected A2A message structure with message.parts[].text",
-                            data={"received": jsonrpc_request.params},
-                        ),
-                        id=jsonrpc_request.id,
-                    )
-                    return JSONResponse(content=error_response.model_dump(), status_code=400)
-        elif isinstance(jsonrpc_request.params, str):
-            # Legacy support: direct string params
-            question = jsonrpc_request.params
-        elif isinstance(jsonrpc_request.params, list) and len(jsonrpc_request.params) > 0:
-            # Legacy support: array params
-            question = (
-                jsonrpc_request.params[0]
-                if isinstance(jsonrpc_request.params[0], str)
-                else str(jsonrpc_request.params[0])
-            )
-        else:
-            logger.error(
-                f"Unexpected params format: {jsonrpc_request.params} (type: {type(jsonrpc_request.params)})"
-            )
+        if not question:
             error_response = JsonRpcErrorResponse(
                 error=JsonRpcError(
                     code=-32602,
-                    message="Invalid params - expected A2A message structure",
-                    data={
-                        "received": jsonrpc_request.params,
-                        "type": str(type(jsonrpc_request.params)),
-                    },
+                    message="Invalid A2A message - no text part found in message.parts",
                 ),
-                id=jsonrpc_request.id,
+                id=request.id,
             )
             return JSONResponse(content=error_response.model_dump(), status_code=400)
 
@@ -262,11 +220,9 @@ async def count_letters_a2a(request_obj: Request) -> JSONResponse:
                 f"Chain of Thought: {results.chain_of_thought}"
             )
 
-        # Generate UUIDs for A2A protocol
+        # Generate UUID for response message
         import uuid
 
-        task_id = str(uuid.uuid4())
-        context_id = str(uuid.uuid4())
         message_id = str(uuid.uuid4())
 
         # According to A2A spec section 3.1.1, SendMessage can return either:
@@ -274,7 +230,6 @@ async def count_letters_a2a(request_obj: Request) -> JSONResponse:
         # - A Message object (for simple synchronous interactions)
         #
         # Since we're doing synchronous processing, return a Message directly
-        # instead of a Task with Completed status
         a2a_message = {
             "kind": "message",
             "messageId": message_id,
@@ -283,29 +238,25 @@ async def count_letters_a2a(request_obj: Request) -> JSONResponse:
         }
 
         # Return JSON-RPC response with A2A Message object
-        jsonrpc_response = JsonRpcResponse(result=a2a_message, id=jsonrpc_request.id)
+        jsonrpc_response = JsonRpcResponse(result=a2a_message, id=request.id)
         response_data = jsonrpc_response.model_dump()
         logger.info(
             f"Returning A2A-compliant JSON-RPC response with Message object: {json.dumps(response_data)}"
         )
         return JSONResponse(content=response_data)
 
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON: {e}")
-        error_response = JsonRpcErrorResponse(
-            error=JsonRpcError(code=-32700, message="Parse error", data=str(e)), id=None
-        )
-        return JSONResponse(content=error_response.model_dump(), status_code=400)
     except ValidationError as e:
         logger.error(f"Validation error: {e}")
         error_response = JsonRpcErrorResponse(
-            error=JsonRpcError(code=-32600, message="Invalid Request", data=e.errors()), id=None
+            error=JsonRpcError(code=-32600, message="Invalid Request", data=e.errors()),
+            id=getattr(request, "id", None),
         )
         return JSONResponse(content=error_response.model_dump(), status_code=400)
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
         error_response = JsonRpcErrorResponse(
-            error=JsonRpcError(code=-32603, message="Internal error", data=str(e)), id=None
+            error=JsonRpcError(code=-32603, message="Internal error", data=str(e)),
+            id=getattr(request, "id", None),
         )
         return JSONResponse(content=error_response.model_dump(), status_code=500)
 
