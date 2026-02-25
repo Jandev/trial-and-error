@@ -1,7 +1,7 @@
 import logging
+import math
 import os
 import time
-import math
 
 from .fabric_sql import query_to_dataframe
 
