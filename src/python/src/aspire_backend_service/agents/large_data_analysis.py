@@ -57,6 +57,21 @@ class DataAnalysisService:
         if self._data is None:
             self._data = await self._provider.get_records()
 
+    async def record_count(self) -> int:
+        await self._ensure_loaded()
+        assert self._data is not None
+        return len(self._data)
+
+    async def distinct_companies(self) -> list[str]:
+        await self._ensure_loaded()
+        assert self._data is not None
+
+        companies = {
+            str(r["Company"]) for r in self._data if "Company" in r and r["Company"] is not None
+        }
+
+        return sorted(companies)
+
     async def _values(self, column: str) -> list[float]:
         await self._ensure_loaded()
         assert self._data is not None
@@ -148,10 +163,11 @@ You MUST use the provided statistical tools.
 
 Rules:
 - NEVER fabricate values.
-- ONLY use money columns 'FGPMedianValue' and 'GrossToNet'.
+- ONLY use money columns 'AverageGrossSellingPrice'.
 - Every metric MUST come from a tool call.
 - Explain the exact sequence of tools used.
 - Mention how many records have been processed (count)
+- For analysis, also mention which companies are in the dataset.
 """
 
             analysis_agent = await agents_client.create_agent(
@@ -179,6 +195,14 @@ Rules:
                 async def find_outliers(column: str, threshold: float = 2.0) -> dict[str, Any]:
                     return await service.find_outliers(column, threshold)
 
+                @tool(approval_mode="never_require")
+                async def get_record_count() -> int:
+                    return await service.record_count()
+
+                @tool(approval_mode="never_require")
+                async def get_distinct_companies() -> list[str]:
+                    return await service.distinct_companies()
+
                 agent = await provider.get_agent(
                     analysis_agent.id,
                     tools=[
@@ -186,6 +210,8 @@ Rules:
                         calculate_median,
                         calculate_standard_deviation,
                         find_outliers,
+                        get_record_count,
+                        get_distinct_companies,
                     ],
                 )
 
