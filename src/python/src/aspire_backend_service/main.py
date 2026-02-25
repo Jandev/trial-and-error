@@ -11,7 +11,7 @@ from .telemetry import configure_telemetry
 logging.basicConfig(level=logging.INFO)
 app = FastAPI()
 
-tracer = configure_telemetry(app, service_name="weather-api")
+tracer = configure_telemetry(app, service_name="backend-api")
 logger = logging.getLogger(__name__)
 
 
