@@ -114,3 +114,13 @@ class CountLettersResponse(BaseModel):
     reasoning: str
     chainOfThought: str
     answer: str
+
+
+class LargeDataAnalysisResponse(BaseModel):
+    summary: str
+    analysisResults: dict = Field(alias="analysis_results")
+    insights: list[str]
+    algorithmUsed: str = Field(alias="algorithm_used")
+
+    class Config:
+        populate_by_name = True
