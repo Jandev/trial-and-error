@@ -2,6 +2,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment("env");
 
+var fabricSqlEndpoint = builder.AddParameter("FabricSqlEndpoint");
+var fabricDatabaseName = builder.AddParameter("FabricDatabaseName");
+
 var aiFoundryProjectEndpoint = builder.AddParameter("AiFoundryProjectEndpoint", secret: true);
 
 // Resolve Python backend paths (relative to AppHost project directory)
@@ -23,6 +26,8 @@ var pythonBackend = builder.AddUvicornApp("backend", pythonDir + "/src", "aspire
 // Should be the format of `https://<your-project>.services.ai.azure.com/api/projects/<project-id>`
 .WithEnvironment("AZURE_AI_PROJECT_ENDPOINT", aiFoundryProjectEndpoint)
 .WithEnvironment("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
+.WithEnvironment("FABRIC_SQL_ENDPOINT", fabricSqlEndpoint)
+.WithEnvironment("FABRIC_DATABASE_NAME", fabricDatabaseName)
 ;
 
 var apiService = builder.AddProject<Projects.AspireTrial_ApiService>("apiservice")
