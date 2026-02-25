@@ -119,3 +119,7 @@ Content-Type: application/json
 ### Large Data Analysis - Agent Card
 GET {{PythonService_HostAddress}}/agents/large-data-analysis/.well-known/agent-card.json
 Accept: application/json
+
+### SQL test endpoint
+GET {{PythonService_HostAddress}}/api/query
+Accept: application/json

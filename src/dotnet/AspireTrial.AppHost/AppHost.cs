@@ -4,6 +4,7 @@ builder.AddAzureContainerAppEnvironment("env");
 
 var fabricSqlEndpoint = builder.AddParameter("FabricSqlEndpoint");
 var fabricDatabaseName = builder.AddParameter("FabricDatabaseName");
+var customerInformationQuery = builder.AddParameter("CustomerInformationQuery");
 
 var aiFoundryProjectEndpoint = builder.AddParameter("AiFoundryProjectEndpoint", secret: true);
 
@@ -28,6 +29,7 @@ var pythonBackend = builder.AddUvicornApp("backend", pythonDir + "/src", "aspire
 .WithEnvironment("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
 .WithEnvironment("FABRIC_SQL_ENDPOINT", fabricSqlEndpoint)
 .WithEnvironment("FABRIC_DATABASE_NAME", fabricDatabaseName)
+.WithEnvironment("CUSTOMER_INFORMATION_QUERY", customerInformationQuery)
 ;
 
 var apiService = builder.AddProject<Projects.AspireTrial_ApiService>("apiservice")
