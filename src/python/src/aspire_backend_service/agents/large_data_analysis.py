@@ -129,10 +129,17 @@ class DataAnalysisService:
                 "std_dev": std_dev,
             }
 
+        # Identify all outliers
         outliers = [x for x in values if abs(x - mean) > threshold * std_dev]
 
+        # Sort by absolute distance from mean (largest deviation first)
+        outliers_sorted = sorted(outliers, key=lambda x: abs(x - mean), reverse=True)
+
+        # Only return the top 10 most extreme outliers
+        top_outliers = outliers_sorted[:10]
+
         return {
-            "outliers": outliers,
+            "outliers": top_outliers,
             "threshold": threshold,
             "mean": mean,
             "std_dev": std_dev,
