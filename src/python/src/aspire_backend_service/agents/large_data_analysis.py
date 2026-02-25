@@ -174,7 +174,7 @@ Rules:
 - Every metric MUST come from a tool call.
 - Explain the exact sequence of tools used.
 - Mention how many records have been processed (count)
-- For analysis, also mention which companies are in the dataset.
+- For analysis, also mention how many dataset (count).
 """
 
             analysis_agent = await agents_client.create_agent(
