@@ -15,5 +15,8 @@
     }
   },
   "ruff.configurationPreference": "filesystemFirst",
-  "flake8.enabled": false
+  "cSpell.words": [
+    "apiservice",
+    "webfrontend"
+  ]
 }

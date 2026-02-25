@@ -31,7 +31,7 @@ class calculator:
             agent_instructions = """You are a calculator agent with access to the following tools:
             1. count_letters(character, phrase) - Counts how many times a specific character appears in a word or phrase
             2. calculate_square_root(number) - Calculates the square root of a number
-            
+
             IMPORTANT: You MUST use these tools to solve problems. Follow these rules:
             - When asked to count characters/letters in a word or phrase, ALWAYS call the count_letters tool
             - When asked to calculate square roots, ALWAYS call the calculate_square_root tool

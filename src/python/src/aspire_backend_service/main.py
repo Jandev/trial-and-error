@@ -1,17 +1,17 @@
 import logging
-import json
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from .routers.agents import router as agents_router
+from .routers.fabric import router as fabric_router
 from .telemetry import configure_telemetry
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI()
 
-tracer = configure_telemetry(app, service_name="weather-api")
+tracer = configure_telemetry(app, service_name="backend-api")
 logger = logging.getLogger(__name__)
 
 
@@ -52,6 +52,7 @@ async def log_requests(request: Request, call_next):
 
 
 app.include_router(agents_router)
+app.include_router(fabric_router)
 
 
 @app.get("/")
