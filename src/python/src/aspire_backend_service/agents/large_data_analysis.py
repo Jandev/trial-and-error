@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Annotated, Any, cast
 
@@ -10,6 +11,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from aspire_backend_service.infrastructure.data_access import (
     get_customer_information,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class large_data_analysis_response(BaseModel):
@@ -73,6 +76,18 @@ class large_data_analysis:
                 answer = await agent.run(
                     query, options={"response_format": large_data_analysis_response}
                 )
+                if not answer or not answer.value:
+                    logger.error(
+                        "Analysis agent returned empty or invalid response",
+                        extra={"query": query},
+                    )
+                    return large_data_analysis_response(
+                        summary="Analysis agent failed to return structured output.",
+                        analysis_results={},
+                        insights=["No structured JSON response was produced by the agent."],
+                        algorithm_used="unknown",
+                    )
+
                 return answer.value
 
             finally:
