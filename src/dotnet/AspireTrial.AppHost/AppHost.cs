@@ -35,6 +35,7 @@ var pythonBackend = builder.AddUvicornApp("backend", pythonDir + "/src", "aspire
 var apiService = builder.AddProject<Projects.AspireTrial_ApiService>("apiservice")
     .WithReference(pythonBackend)
     .WithHttpHealthCheck("/health")
+    .WithExternalHttpEndpoints()
     .WithEnvironment("AzureAI__ProjectEndpoint", aiFoundryProjectEndpoint)
     .WithEnvironment("AzureAI__ModelDeploymentName", "gpt-4o-mini");
 
@@ -43,5 +44,11 @@ builder.AddProject<Projects.AspireTrial_Web>("webfrontend")
     .WithHttpHealthCheck("/health")
     .WithReference(apiService)
     .WaitFor(apiService);
+
+builder.AddViteApp("copilot-react", "../../react/copilot-frontend")
+    .WithReference(apiService)
+    .WaitFor(apiService)
+    .WithEnvironment("VITE_AGUI_URL", ReferenceExpression.Create($"{apiService.GetEndpoint("https")}/agui"))
+    .WithExternalHttpEndpoints();
 
 builder.Build().Run();
