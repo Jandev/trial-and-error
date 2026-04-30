@@ -166,6 +166,101 @@ sequenceDiagram
 
 ---
 
+## React + CopilotKit Frontend Tools
+
+A standalone React app (Vite + TypeScript) at `src/react/copilot-frontend/` provides a chat UI backed by the **same .NET API service**. It demonstrates **browser-side tools** — capabilities the agent can invoke in the user's browser without any Node.js sidecar — by speaking the **AG-UI** protocol directly to a Microsoft Agent Framework (MAF) agent hosted in `AspireTrial.ApiService`.
+
+### Why This Matters
+
+Traditional CopilotKit setups place a Node "runtime" between the browser and the agent. With AG-UI's first-party .NET hosting (`Microsoft.Agents.AI.Hosting.AGUI.AspNetCore`), the browser connects straight to the .NET endpoint over Server-Sent Events. This:
+
+- Removes an entire process from the topology
+- Keeps agent orchestration and frontend tooling in one runtime
+- Lets the .NET API expose both A2A (server-to-server) and AG-UI (browser-to-server) protocols from the same agent
+
+### Architecture
+
+```mermaid
+sequenceDiagram
+    participant Browser as Browser (CopilotKit + HttpAgent)
+    participant API as .NET API (/agui)
+    participant Agent as MAF Agent (Azure AI Foundry)
+    participant Tool as Browser Tool Handler
+
+    Browser->>API: POST /agui (RunAgentInput, SSE)
+    API->>Agent: Run with chat history + frontend tool schemas
+    Agent->>Agent: LLM decides to call a frontend tool
+    Agent-->>API: ToolCallStart / ToolCallArgs / ToolCallEnd events
+    API-->>Browser: SSE stream of events
+    Browser->>Tool: Invoke registered useCopilotAction handler
+    Tool-->>Browser: Tool result (string)
+    Browser->>API: ToolCallResult event (next POST /agui)
+    API->>Agent: Resume with tool result
+    Agent-->>API: TextMessageContent events
+    API-->>Browser: Final assistant message
+```
+
+### The Three Frontend Tools
+
+Registered in the React app as CopilotKit actions; their schemas are advertised to the agent via the AG-UI handshake.
+
+| Tool | Signature | Behaviour |
+| --- | --- | --- |
+| `showToast` | `(message: string, level: "info" \| "success" \| "warning" \| "error")` | Renders a toast via `react-hot-toast`. Returns confirmation string. |
+| `askUserConfirmation` | `(question: string)` | Renders a modal dialog (focus-trapped, Enter/Escape). Returns `"confirmed"` or `"cancelled"`. |
+| `showWeather` | `(city: string)` | Geocodes via Open-Meteo, fetches current weather, renders a card. Returns one-line summary. |
+
+Source: `src/react/copilot-frontend/src/tools/`.
+
+### How To Run
+
+The React app is wired into Aspire as a `ViteApp` resource. `aspire run` boots it alongside the .NET API and Python backend, with `VITE_AGUI_URL` injected automatically:
+
+```bash
+aspire run
+```
+
+Open the Aspire dashboard, locate the **`copilot-react`** resource, and click its allocated URL. Then try prompts like:
+
+- "Show me a success toast saying deployment finished"
+- "Confirm with the user before proceeding with the rollback"
+- "What's the weather in Amsterdam?"
+
+#### Standalone Dev (Without Aspire)
+
+If you want to run the React app on its own (e.g. `npm run dev`), set `VITE_AGUI_URL` to point at a running .NET API:
+
+```bash
+cd src/react/copilot-frontend
+VITE_AGUI_URL=http://localhost:5001/agui npm run dev
+```
+
+(The `.env.example` file is intentionally excluded from version control by the project's edit policy — set the variable inline or in your shell.)
+
+### Manual Smoke Test
+
+A canonical AG-UI request is included in the shared HTTP test file at `src/shared/api-tests.http` under the `### AG-UI smoke test` section. Send it from any REST client that supports SSE (e.g. the VS Code REST Client extension) to verify the `/agui` endpoint independently of the React app.
+
+### End-to-End Tests
+
+Playwright specs live at `src/react/copilot-frontend/tests/e2e/`. They mock the AG-UI endpoint and Open-Meteo APIs via `page.route()` so they run deterministically without a live backend:
+
+```bash
+cd src/react/copilot-frontend
+npm run test:e2e            # headless
+npm run test:e2e:headed     # with visible browser for debugging
+```
+
+### Relevant Files
+
+- `src/dotnet/AspireTrial.ApiService/Program.cs` — `AddAGUI()`, singleton `AIAgent`, `MapAGUI("/agui", agent)`
+- `src/dotnet/AspireTrial.ApiService/Services/FrontendDemoAgent.cs` — agent instructions + `get_server_time` server-side tool
+- `src/dotnet/AspireTrial.AppHost/AppHost.cs` — `AddViteApp("copilot-react", …)` wiring with `VITE_AGUI_URL`
+- `src/react/copilot-frontend/src/App.tsx` — `<CopilotKit>` provider + `HttpAgent` + tool mounts
+- `src/react/copilot-frontend/src/tools/` — the three `useCopilotAction` hooks
+
+---
+
 ## Agent Capabilities
 
 Current example:

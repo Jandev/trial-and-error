@@ -123,3 +123,25 @@ Accept: application/json
 ### SQL test endpoint
 GET {{PythonService_HostAddress}}/api/query
 Accept: application/json
+
+### AG-UI smoke test
+# Requires `aspire run` (or the API service started standalone).
+# Posts a minimal RunAgentInput to the AG-UI endpoint mapped at /agui.
+# Response is text/event-stream — the body is a sequence of AG-UI SSE
+# events (RUN_STARTED, TEXT_MESSAGE_*, RUN_FINISHED). httpYac / REST Client
+# will keep the stream open; cancel manually when done.
+POST {{ApiService_HostAddress}}/agui
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+    "threadId": "smoke-thread-1",
+    "runId": "smoke-run-1",
+    "state": {},
+    "messages": [
+        { "id": "msg-1", "role": "user", "content": "Say hi in exactly three words." }
+    ],
+    "tools": [],
+    "context": [],
+    "forwardedProps": {}
+}
